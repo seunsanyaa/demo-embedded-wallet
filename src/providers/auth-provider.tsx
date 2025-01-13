@@ -1,7 +1,5 @@
 "use client"
 
-import { createContext, ReactNode, useContext, useReducer } from "react"
-import { useRouter } from "next/navigation"
 import {
   createUserSubOrg,
   getSubOrgId,
@@ -19,6 +17,8 @@ import {
 } from "@turnkey/sdk-browser"
 import { useTurnkey } from "@turnkey/sdk-react"
 import { WalletType } from "@turnkey/wallet-stamper"
+import { useRouter } from "next/navigation"
+import { createContext, ReactNode, useContext, useReducer } from "react"
 
 import { Email, User } from "@/types/turnkey"
 
@@ -136,10 +136,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const initEmailLogin = async (email: Email) => {
     dispatch({ type: "LOADING", payload: true })
     try {
+      const targetPublicKey = authIframeClient?.iframePublicKey;
+
+      if (!targetPublicKey || !/^[0-9a-fA-F]+$/.test(targetPublicKey)) {
+        dispatch({ type: "ERROR", payload: "Invalid public key format" });
+        return;
+      }
+      console.log("targetPublicKey", targetPublicKey)
       const response = await initEmailAuth({
-        email,
-        targetPublicKey: `${authIframeClient?.iframePublicKey}`,
-      })
+        email, 
+        targetPublicKey,
+      });
 
       if (response) {
         dispatch({ type: "INIT_EMAIL_AUTH" })
@@ -187,7 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: "LOADING", payload: true })
     try {
       const subOrgId = await getSubOrgIdByEmail(email as Email)
-
+console.log(subOrgId,'sub')
       if (subOrgId?.length) {
         const loginResponse = await passkeyClient?.login()
         if (loginResponse?.organizationId) {

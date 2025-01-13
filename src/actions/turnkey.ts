@@ -210,28 +210,56 @@ export const initEmailAuth = async ({
   email: Email
   targetPublicKey: string
 }) => {
-  let organizationId = await getSubOrgIdByEmail(email as Email)
+  try {
+    console.log("email:", email)
+    console.log("targetPublicKey:", targetPublicKey)
 
-  if (!organizationId) {
-    const { subOrg } = await createUserSubOrg({
-      email: email as Email,
-    })
-    organizationId = subOrg.subOrganizationId
-  }
+    // Clean the public key by removing any non-hexadecimal characters
+    const cleanedPublicKey = targetPublicKey.replace(/[^0-9a-fA-F]/g, "")
 
-  const magicLinkTemplate = getMagicLinkTemplate("auth", email, "email")
+    // Format the cleaned public key
+    const formattedPublicKey = cleanedPublicKey.startsWith("0x")
+      ? cleanedPublicKey
+      : `0x${cleanedPublicKey}`
 
-  if (organizationId?.length) {
-    const authResponse = await client.emailAuth({
-      email,
-      targetPublicKey,
-      organizationId,
-      emailCustomization: {
-        magicLinkTemplate,
-      },
-    })
+    console.log("Formatted public key:", formattedPublicKey)
 
-    return authResponse
+    // Validate that the formatted public key contains only hex characters and is the correct length
+    if (!formattedPublicKey.match(/^0x(?:04)?[0-9a-fA-F]{128}$/)) {
+      throw new Error(
+        `Invalid public key format or length: ${formattedPublicKey}`
+      )
+    }
+
+    let organizationId = await getSubOrgIdByEmail(email as Email)
+    console.log("organizationId:", organizationId)
+
+    if (!organizationId) {
+      const { subOrg } = await createUserSubOrg({
+        email: email as Email,
+      })
+
+      console.log("created subOrg:", subOrg)
+      organizationId = subOrg.subOrganizationId
+    }
+
+    const magicLinkTemplate = getMagicLinkTemplate("auth", email, "email")
+
+    if (organizationId?.length) {
+      const authResponse = await client.emailAuth({
+        email,
+        targetPublicKey: formattedPublicKey, // Use the formatted key
+        organizationId,
+        emailCustomization: {
+          magicLinkTemplate,
+        },
+      })
+
+      return authResponse
+    }
+  } catch (error) {
+    console.error("Error in initEmailAuth:", error)
+    throw error
   }
 }
 

@@ -38,6 +38,7 @@ export const getTransactions = async (
       excludeZeroValue: false,
       category: [
         AssetTransfersCategory.ERC20,
+        
         AssetTransfersCategory.EXTERNAL,
         AssetTransfersCategory.INTERNAL,
       ],

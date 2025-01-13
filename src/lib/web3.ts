@@ -22,7 +22,7 @@ import {
   WalletClient,
   webSocket,
 } from "viem"
-import { sepolia } from "viem/chains"
+import { sepolia, } from "viem/chains"
 
 import { env } from "@/env.mjs"
 import type { AlchemyMinedTransaction, Transaction } from "@/types/web3"
